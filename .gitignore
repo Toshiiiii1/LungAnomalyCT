@@ -131,6 +131,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+CT552_vm/
 
 # Spyder project settings
 .spyderproject
