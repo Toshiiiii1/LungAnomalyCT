@@ -6,8 +6,6 @@ import pandas as pd
 import os
 from tqdm import tqdm
 
-# LUNA_mask_extraction.py
-
 file_list = os.listdir("./subset0")
 file_list = list(map(lambda file : "./subset0/" + file, file_list))
 
@@ -67,8 +65,8 @@ if __name__ == "__main__":
     df_node = pd.read_csv("./annotations.csv")
     df_node["file"] = df_node["seriesuid"].apply(get_filename)
     df_node = df_node.dropna()
-    
-    df_roi = dict()
+    df_roi = pd.read_csv("./ROI_coor.csv")
+    df_roi_cur = dict()
     
     for fcount, img_file in enumerate(tqdm(file_list)):
         # print("Getting mask for image file %s" % img_file.replace("./subset0",""))
@@ -91,13 +89,23 @@ if __name__ == "__main__":
                 center = np.array([node_x, node_y, node_z])   # nodule center
                 v_center = np.rint((center-origin)/spacing)  # nodule center in voxel space (still x,y,z ordering)
             
-            for i, i_z in enumerate(np.arange(int(v_center[2])-2, int(v_center[2])+3).clip(0, num_z-1)): # clip prevents going out of bounds in Z
-                mask, roi = make_mask(center, diam, i_z*spacing[2]+origin[2], width, height, spacing, origin)
-                if i == 1:
-                    temp = "roi_%04d_%04d" % (fcount, node_idx)
-                    df_roi.update({temp: roi})
-                masks[i] = mask
-                imgs[i] = img_array[i_z]
-            np.save(os.path.join("./images", "images_%04d_%04d.npy" % (fcount, node_idx)), imgs)
-            np.save(os.path.join("./masks", "masks_%04d_%04d.npy" % (fcount, node_idx)), masks)
+                for i, i_z in enumerate(np.arange(int(v_center[2])-2, int(v_center[2])+3).clip(0, num_z-1)): # clip prevents going out of bounds in Z
+                    mask, roi = make_mask(center, diam, i_z*spacing[2]+origin[2], width, height, spacing, origin)
+                    if i == 2:
+                        # roi_key = "roi_%04d_%04d" % (fcount, node_idx)
+                        roi_key = f"{file_list[0].split('/')[-1].rsplit('.', 1)[0]}_{fcount}_{node_idx}"
+                        df_roi_cur.update({roi_key: roi})
+                    masks[i] = mask
+                    imgs[i] = img_array[i_z]
+                img_name = f"{file_list[0].split('/')[-1].rsplit('.', 1)[0]}_{fcount}_{node_idx}.npy"
+                mask_name = f"{file_list[0].split('/')[-1].rsplit('.', 1)[0]}_{fcount}_{node_idx}.npy"
+                
+                np.save(os.path.join("./images", img_name), imgs)
+                np.save(os.path.join("./masks", mask_name), masks)
+            
+    df_temp = pd.DataFrame.from_dict(df_roi_cur, columns=["x_min", "x_max", "y_min", "y_max"], orient='index')
+    df_temp["ID"] = list(df_roi_cur.keys())
+    df_temp = df_temp.reset_index(drop=True)
+    df_roi = pd.concat([df_roi, df_temp])
+    df_roi.to_csv("ROI_coor.csv", index=False)
         
