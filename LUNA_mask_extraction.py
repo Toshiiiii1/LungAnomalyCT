@@ -5,9 +5,10 @@ from glob import glob
 import pandas as pd
 import os
 from tqdm import tqdm
+import cv2
 
-file_list = os.listdir("./subset0")
-file_list = list(map(lambda file : "./subset0/" + file, file_list))
+file_list = os.listdir("./subset9")
+file_list = list(map(lambda file : "./subset9/" + file, file_list))
 
 def make_mask(center, diam, z, width, height, spacing, origin):
     '''
@@ -51,6 +52,14 @@ def get_filename(case):
         if case in f:
             return(f)
         
+def normalize(image):
+    MIN_BOUND = -1000.0
+    MAX_BOUND = 400.0
+    image = (image - MIN_BOUND) / (MAX_BOUND - MIN_BOUND)
+    image[image>1] = 1.
+    image[image<0] = 0.
+    return image
+        
 def matrix2int16(matrix):
     ''' 
         matrix must be a numpy array NXN
@@ -62,7 +71,7 @@ def matrix2int16(matrix):
     return(np.array(np.rint( (matrix-m_min)/float(m_max-m_min) * 65535.0), dtype=np.uint16))
 
 if __name__ == "__main__":
-    df_node = pd.read_csv("./annotations.csv")
+    df_node = pd.read_csv("./LUNA16/annotations.csv")
     df_node["file"] = df_node["seriesuid"].apply(get_filename)
     df_node = df_node.dropna()
     df_roi = pd.read_csv("./ROI_coor.csv")
@@ -85,27 +94,38 @@ if __name__ == "__main__":
                 diam = cur_row["diameter_mm"]
                 
                 imgs = np.ndarray([5, height, width], dtype=np.float32)
-                masks = np.ndarray([5, height, width], dtype=np.uint8)
+                # masks = np.ndarray([5, height, width], dtype=np.uint8)
                 center = np.array([node_x, node_y, node_z])   # nodule center
                 v_center = np.rint((center-origin)/spacing)  # nodule center in voxel space (still x,y,z ordering)
             
                 for i, i_z in enumerate(np.arange(int(v_center[2])-2, int(v_center[2])+3).clip(0, num_z-1)): # clip prevents going out of bounds in Z
-                    mask, roi = make_mask(center, diam, i_z*spacing[2]+origin[2], width, height, spacing, origin)
+                    # mask, roi = make_mask(center, diam, i_z*spacing[2]+origin[2], width, height, spacing, origin)
+                    _, roi = make_mask(center, diam, i_z*spacing[2]+origin[2], width, height, spacing, origin)
                     if i == 2:
                         # roi_key = "roi_%04d_%04d" % (fcount, node_idx)
-                        roi_key = f"{file_list[0].split('/')[-1].rsplit('.', 1)[0]}_{fcount}_{node_idx}"
+                        roi_key = f"{img_file.split('/')[-1].rsplit('.', 1)[0]}_{fcount}_{node_idx}"
                         df_roi_cur.update({roi_key: roi})
-                    masks[i] = mask
+                    # masks[i] = mask
                     imgs[i] = img_array[i_z]
-                img_name = f"{file_list[0].split('/')[-1].rsplit('.', 1)[0]}_{fcount}_{node_idx}.npy"
-                mask_name = f"{file_list[0].split('/')[-1].rsplit('.', 1)[0]}_{fcount}_{node_idx}.npy"
+                img_name = f"{img_file.split('/')[-1].rsplit('.', 1)[0]}_{fcount}_{node_idx}.npy"
+                mask_name = f"{img_file.split('/')[-1].rsplit('.', 1)[0]}_{fcount}_{node_idx}.npy"
+                # np.save(os.path.join("./images", "images_%04d_%04d.npy" % (fcount, node_idx)), imgs)
+                # np.save(os.path.join("./masks", "masks_%04d_%04d.npy" % (fcount, node_idx)), masks)
                 
-                np.save(os.path.join("./images", img_name), imgs)
-                np.save(os.path.join("./masks", mask_name), masks)
+                np.save(os.path.join("./LUNA16/images", img_name), imgs)
+                # np.save(os.path.join("./masks", mask_name), masks)
             
     df_temp = pd.DataFrame.from_dict(df_roi_cur, columns=["x_min", "x_max", "y_min", "y_max"], orient='index')
     df_temp["ID"] = list(df_roi_cur.keys())
     df_temp = df_temp.reset_index(drop=True)
     df_roi = pd.concat([df_roi, df_temp])
     df_roi.to_csv("ROI_coor.csv", index=False)
+    
+    img_files = os.listdir("./LUNA16/images")
+    for img_file in tqdm(img_files):
+        imgs = np.load(f"./LUNA16/images/{img_file}")
+        temp = normalize(imgs[2])
+        img_grey = temp * 255
+        img_rgb = np.stack((img_grey,)*3, -1)
+        cv2.imwrite(f"./preprocessed_img/{img_file.rsplit('.', 1)[0]}.png", img_rgb)
         
