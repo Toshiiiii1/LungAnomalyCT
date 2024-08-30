@@ -21,5 +21,5 @@ if __name__ == "__main__":
         x_center, y_center, box_w, box_h = yolo_format_calculate(x_min, x_max, y_min, y_max, 512, 512)
         
         with open(f"./labels/{roi_id}.txt", "w") as f:
-            f.write(f"0 {x_center} {y_center}, {box_w}, {box_h}")
+            f.write(f"0 {x_center} {y_center} {box_w} {box_h}")
         
