@@ -181,3 +181,9 @@ LUNA16/
 *.zip
 *.pth
 *.pt
+COCO format/
+YOLO format/
+FRCNN format/
+DETR results/
+FRCNN results/
+YOLO results/
