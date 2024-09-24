@@ -179,3 +179,5 @@ pyrightconfig.json
 # Other
 LUNA16/
 *.zip
+*.pth
+*.pt
