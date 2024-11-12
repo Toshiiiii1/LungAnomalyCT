@@ -187,3 +187,4 @@ FRCNN format/
 DETR results/
 FRCNN results/
 YOLO results/
+*.db

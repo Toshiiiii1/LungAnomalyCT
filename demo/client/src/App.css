@@ -40,3 +40,27 @@
 .read-the-docs {
   color: #888;
 }
+
+.history-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.history-card {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 20px;
+  /* width: 200px; */
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s;
+}
+
+.history-card:hover {
+  transform: scale(1.05);
+  /* background-color: #f0f0f0; */
+  border-color: #646cff;
+}

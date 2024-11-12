@@ -65,7 +65,7 @@ def plot_results(pil_img, scores, labels, boxes, model="yolo"):
             text = f'{id2label[1]}: {score:0.2f}'
         else:
             text = f'{id2label[label]}: {score:0.2f}'
-        ax.text(xmin, ymin, text, fontsize=15, color='black', bbox=dict(facecolor='yellow', alpha=0.5))
+        # ax.text(xmin, ymin, text, fontsize=15, color='black', bbox=dict(facecolor='yellow', alpha=0.5))
     
     # Tắt hiển thị các trục
     ax.axis('off')
@@ -75,22 +75,22 @@ def plot_results(pil_img, scores, labels, boxes, model="yolo"):
 
 if __name__ == "__main__":
     # load mô hình DETR
-    processor = DetrImageProcessor.from_pretrained(r"D:\Code\Python Code\CT552\DETR results\runs_detr_r50_512\test_detr_r50_dc5_version\checkpoint-15100")
-    test_dataset = CocoDetection(img_folder=r"D:\Code\Python Code\CT552\COCO format\lung_ct_2_512.v4i.coco\test", processor=processor)
+    processor = DetrImageProcessor.from_pretrained(r"D:\Code\Python Code\CT552\DETR results\runs_detr_R50_DC5\checkpoint-15150")
+    test_dataset = CocoDetection(img_folder=r"D:\Code\Python Code\CT552\COCO format\lung_ct_version_n_512.v2i.coco\test", processor=processor)
     cats = test_dataset.coco.cats
     id2label = {k: v["name"] for k, v in cats.items()}
-    model = DetrForObjectDetection.from_pretrained(r"D:\Code\Python Code\CT552\DETR results\runs_detr_r50_512\test_detr_r50_dc5_version\checkpoint-15100", id2label=id2label, ignore_mismatched_sizes=True)
+    model = DetrForObjectDetection.from_pretrained(r"D:\Code\Python Code\CT552\DETR results\runs_detr_R50_DC5\checkpoint-15150", id2label=id2label, ignore_mismatched_sizes=True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     
     # load mô hình YOLO
-    YOLO_model = YOLO(r"D:\Code\Python Code\CT552\YOLO results\runs_yolov9e_512\detect\train\weights\best.pt")
+    YOLO_model = YOLO(r"D:\Code\Python Code\CT552\YOLO results\runs_yolov8x_512_new\train\weights\best.pt")
     
     # load mô hình Faster RCNN
     FRCNN_model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
     in_features = FRCNN_model.roi_heads.box_predictor.cls_score.in_features
     FRCNN_model.roi_heads.box_predictor = FastRCNNPredictor(in_features, 2) 
-    checkpoint = torch.load(r"D:\Code\Python Code\CT552\FRCNN result\frcnn_model_2_512.pth", map_location=torch.device('cpu'))
+    checkpoint = torch.load(r"D:\Code\Python Code\CT552\FRCNN result\frcnn_model_3_512.pth", map_location=torch.device('cpu'))
     FRCNN_model.load_state_dict(checkpoint['model_state_dict'])
     FRCNN_model.to(device)
     FRCNN_model.eval()
@@ -101,9 +101,9 @@ if __name__ == "__main__":
         col1, col2, col3 = st.columns(3)
         
         # lấy thông tin về tọa độ bounding box từ file csv, hiển thị bouding box lên ảnh
-        img_path = os.path.join(r"D:\Code\Python Code\CT552\YOLO format\lung_ct_2_512.v4i.yolov9\test\images", uploaded_file.name)
+        img_path = os.path.join(r"D:\Code\Python Code\CT552\YOLO format\lung_ct_version_n_512.v2i.yolov8\test\images", uploaded_file.name)
         roi_id = uploaded_file.name.rsplit("_", 1)[0].replace("-", ".")
-        df_roi = pd.read_csv("./ROI_coor3.csv")
+        df_roi = pd.read_csv("./ROI_coor4.csv")
         a = df_roi[df_roi["ID"] == f"{roi_id}"]
         x_min, x_max, y_min, y_max = a["x_min"].iloc[0], a["x_max"].iloc[0], a["y_min"].iloc[0], a["y_max"].iloc[0]
         img = cv2.imread(img_path)
@@ -120,6 +120,7 @@ if __name__ == "__main__":
             outputs = model(pixel_values=pixel_values, pixel_mask=None)
         postprocessed_outputs = processor.post_process_object_detection(outputs, target_sizes=[(512, 512)], threshold=0.5)
         results = postprocessed_outputs[0]
+        # st.write(results)
         image = Image.open(img_path)
         # plot_results(image, results['scores'], results['labels'], results['boxes'], model)
         # if results["boxes"].tolist():
@@ -135,6 +136,7 @@ if __name__ == "__main__":
         # sử dụng mô hình YOLO để xác định bouding box    
         img3 = cv2.resize(img, (512, 512))
         box = YOLO_model(img3)
+        # st.write(box[0].boxes)
         # x_min_yolo, y_min_yolo, x_max_yolo, y_max_yolo = box[0].boxes.xyxy[0].tolist()
         # cv2.rectangle(img3, (int(x_min_yolo), int(y_min_yolo)), (int(x_max_yolo), int(y_max_yolo)), color=(255,0,0), thickness=2)
         # cv2.rectangle(img3, (int(x_min), int(y_min)), (int(x_max), int(y_max)), color=(0,255,0), thickness=2)
@@ -149,6 +151,7 @@ if __name__ == "__main__":
         with torch.no_grad():
             prediction = FRCNN_model([img4])[0]
         prediction = apply_nms(prediction)
+        # st.write(prediction)
         # thiết lập ngưỡng
         score_threshold = 0.1
 
