@@ -136,7 +136,10 @@ if __name__ == "__main__":
         # sử dụng mô hình YOLO để xác định bouding box    
         img3 = cv2.resize(img, (512, 512))
         box = YOLO_model(img3)
-        # st.write(box[0].boxes)
+        st.write(box[0].boxes)
+        for i in box[0].boxes.xyxy:
+            x_min_yolo, y_min_yolo, x_max_yolo, y_max_yolo = i.tolist()
+            st.write(int(x_min_yolo), int(y_min_yolo)), (int(x_max_yolo), int(y_max_yolo))
         # x_min_yolo, y_min_yolo, x_max_yolo, y_max_yolo = box[0].boxes.xyxy[0].tolist()
         # cv2.rectangle(img3, (int(x_min_yolo), int(y_min_yolo)), (int(x_max_yolo), int(y_max_yolo)), color=(255,0,0), thickness=2)
         # cv2.rectangle(img3, (int(x_min), int(y_min)), (int(x_max), int(y_max)), color=(0,255,0), thickness=2)
