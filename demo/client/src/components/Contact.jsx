@@ -2,50 +2,15 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 
 const Contact = () => {
-	const [file1, setFile1] = useState(null);
-	const [file2, setFile2] = useState(null);
 	const [result, setResult] = useState([]); // Danh sách ảnh từ API
 	const [currentIndex, setCurrentIndex] = useState(0); // Ảnh hiện tại
 	const [predictIndex, setPredictIndex] = useState(0); // Ảnh hiện tại
 	const [predictedImageUrl, setPredictedImageUrl] = useState(""); // URL ảnh đã xử lý
+	const [predictedImageUrls, setPredictedImageUrls] = useState([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [history, setHistory] = useState([]);
 	const [selectedHistory, setSelectedHistory] = useState(null);
-
-	const handleFile1Change = (e) => setFile1(e.target.files[0]);
-	const handleFile2Change = (e) => setFile2(e.target.files[0]);
-
-	const handleUpload = async () => {
-		if (!file1 || !file2) {
-			alert("Vui lòng chọn cả hai tệp!");
-			return;
-		}
-
-		const formData = new FormData();
-		formData.append("file1", file1);
-		formData.append("file2", file2);
-
-		setIsLoading(true);
-		try {
-			const response = await axios.post(
-				"http://localhost:8000/upload",
-				formData,
-				{
-					headers: {
-						"Content-Type": "multipart/form-data",
-					},
-				}
-			);
-			setResult(response.data.files);
-			setCurrentIndex(0);
-			setPredictedImageUrl("");
-		} catch (error) {
-			console.error("Upload failed:", error);
-			alert("Tải lên thất bại.");
-		} finally {
-			setIsLoading(false); // Kết thúc tải ảnh
-		}
-	};
+	const [fileType, setFileType] = useState("");
 
 	const fetchHistory = async () => {
 		try {
@@ -76,10 +41,12 @@ const Contact = () => {
 	// Khi nhấn vào một thẻ, hiển thị ảnh của lịch sử đó
 	const handleHistoryClick = (record) => {
 		setSelectedHistory(record);
-		setResult(record.extracted_images);
-		setCurrentIndex(record.slice_index);
-		setPredictIndex(record.slice_index);
-		setPredictedImageUrl(record.predicted_image);
+		setResult(record.original_images);
+		setCurrentIndex(0);
+		setPredictIndex(0);
+		setPredictedImageUrl("");
+		setPredictedImageUrls(record.predicted_images);
+		setFileType(record.file_type);
 	};
 
 	const handleDeleteHistory = async (recordId) => {
@@ -94,23 +61,12 @@ const Contact = () => {
 		}
 	};
 
-	const handlePredict = () => {
-		const currentImageUrl = result[currentIndex];
-
-		axios
-			.post("http://localhost:8080/predict/", {
-				image_url: currentImageUrl,
-			})
-			.then((response) => {
-				setPredictedImageUrl(response.data.predicted_image); // Lưu URL ảnh đã xử lý
-				setPredictIndex(currentIndex);
-				fetchHistory();
-			})
-			.catch((error) => {
-				console.error("Error predicting image:", error);
-			});
-
-		console.log(predictedImageUrl);
+	const handleImageClick = (url, sliceNumber) => {
+		setPredictedImageUrl(url);
+		if (fileType === "mhd/raw"){
+			setCurrentIndex(sliceNumber);
+			setPredictIndex(sliceNumber);
+		}
 	};
 
 	return (
@@ -125,8 +81,8 @@ const Contact = () => {
 							className="history-card"
 							onClick={() => handleHistoryClick(record)}
 						>
-							<h3>File ID: {record.file_id}</h3>
-							<p>Slice Index: {record.slice_index}</p>
+							<h3>File name: {record.file_name}</h3>
+							<p>File type: {record.file_type}</p>
 							<p>Timestamp: {record.timestamp}</p>
 							<button
 								onClick={(e) => {
@@ -142,7 +98,6 @@ const Contact = () => {
 
 				{/* Main Content */}
 				<div className="main-content">
-					<h1>Contact Me</h1>
 					{isLoading ? (
 						<p>Đang tải ảnh...</p>
 					) : result.length > 0 ? (
@@ -171,7 +126,11 @@ const Contact = () => {
 											fontSize: "18px",
 										}}
 									>
-										Slice {currentIndex} of {result.length}
+										{fileType === "mhd/raw"
+											? `Slice ${currentIndex} of ${result.length}`
+											: fileType === "png/jpg/jpeg"
+											? "Original image"
+											: ""}
 									</p>
 								</div>
 
@@ -190,60 +149,113 @@ const Contact = () => {
 												fontSize: "18px",
 											}}
 										>
-											Predicted Image:{" "}
-											{`Slice ${predictIndex}`}
+											{fileType === "mhd/raw" ? (
+												<>
+													Predicted Image:{" "}
+													{`Slice ${predictIndex}`}
+												</>
+											) : fileType === "png/jpg/jpeg" ? (
+												"Predicted image"
+											) : null}
 										</p>
 									</div>
 								)}
 							</div>
 
 							{/* Các nút điều khiển Previous và Next */}
-							<div style={{ marginTop: "20px" }}>
-								<button
-									onClick={() =>
-										setCurrentIndex((prevIndex) =>
-											prevIndex > 0
-												? prevIndex - 1
-												: result.length - 1
-										)
-									}
+							{fileType === "mhd/raw" && (
+								<div style={{ marginTop: "20px" }}>
+									<button
+										onClick={() =>
+											setCurrentIndex((prevIndex) =>
+												prevIndex > 0
+													? prevIndex - 1
+													: result.length - 1
+											)
+										}
+										style={{
+											marginRight: "10px",
+											padding: "10px",
+											fontSize: "16px",
+											cursor: "pointer",
+										}}
+									>
+										Previous
+									</button>
+									<button
+										onClick={() =>
+											setCurrentIndex((prevIndex) =>
+												prevIndex < result.length - 1
+													? prevIndex + 1
+													: 0
+											)
+										}
+										style={{
+											marginLeft: "10px",
+											padding: "10px",
+											fontSize: "16px",
+											cursor: "pointer",
+										}}
+									>
+										Next
+									</button>
+								</div>
+							)}
+							<div>
+								<h2>Predicted Images</h2>
+								<div
 									style={{
-										marginRight: "10px",
-										padding: "10px",
-										fontSize: "16px",
-										cursor: "pointer",
+										display: "flex",
+										flexWrap: "wrap",
+										gap: "10px",
+										justifyContent: "center",
 									}}
 								>
-									Previous
-								</button>
-								<button
-									onClick={() =>
-										setCurrentIndex((prevIndex) =>
-											prevIndex < result.length - 1
-												? prevIndex + 1
-												: 0
-										)
-									}
-									style={{
-										marginLeft: "10px",
-										padding: "10px",
-										fontSize: "16px",
-										cursor: "pointer",
-									}}
-								>
-									Next
-								</button>
-								<button
-									onClick={handlePredict}
-									style={{
-										marginLeft: "10px",
-										padding: "10px",
-										fontSize: "16px",
-										cursor: "pointer",
-									}}
-								>
-									Predict
-								</button>
+									{predictedImageUrls.length > 0 ? (
+										predictedImageUrls.map((url, index) => {
+											// Trích xuất số thứ tự mặt cắt từ URL
+											const sliceNumberMatch =
+												url.match(/_slice_(\d+)\.png$/);
+											const sliceNumber = sliceNumberMatch
+												? parseInt(
+														sliceNumberMatch[1],
+														10
+												  )
+												: "Unknown";
+
+											return (
+												<div
+													key={index}
+													style={{
+														textAlign: "center",
+													}}
+												>
+													<img
+														src={url}
+														alt={`Slice ${sliceNumber}`}
+														style={{
+															maxWidth: "300px",
+															maxHeight: "300px",
+															cursor: "pointer",
+														}}
+														onClick={() =>
+															handleImageClick(
+																url,
+																sliceNumber
+															)
+														}
+													/>
+													<p>
+														Image {index + 1} -
+														Slice {sliceNumber}
+													</p>
+												</div>
+											);
+										})
+									) : (
+										<p>No images to display</p>
+									)}
+								</div>
 							</div>
 						</>
 					) : (

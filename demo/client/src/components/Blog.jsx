@@ -8,6 +8,7 @@ const Blogs = () => {
 	const [currentIndex, setCurrentIndex] = useState(0); // Ảnh hiện tại
 	const [predictIndex, setPredictIndex] = useState(0); // Ảnh hiện tại
 	const [predictedImageUrl, setPredictedImageUrl] = useState(""); // URL ảnh đã xử lý
+	const [predictedImageUrls, setPredictedImageUrls] = useState([]);
 	const [isLoading, setIsLoading] = useState(false);
 
 	const handleFile1Change = (e) => setFile1(e.target.files[0]);
@@ -26,7 +27,7 @@ const Blogs = () => {
 		setIsLoading(true);
 		try {
 			const response = await axios.post(
-				"http://localhost:8000/upload",
+				"http://localhost:8000/upload_mhd_raw",
 				formData,
 				{
 					headers: {
@@ -35,6 +36,7 @@ const Blogs = () => {
 				}
 			);
 			setResult(response.data.files);
+			setPredictedImageUrls(response.data.pred_files);
 			setCurrentIndex(0);
 			setPredictedImageUrl("");
 		} catch (error) {
@@ -58,28 +60,14 @@ const Blogs = () => {
 		}
 	};
 
-	const handlePredict = () => {
-		const currentImageUrl = result[currentIndex];
-
-		axios
-			.post("http://localhost:8080/predict/", {
-				image_url: currentImageUrl,
-			})
-			.then((response) => {
-				setPredictedImageUrl(response.data.predicted_image); // Lưu URL ảnh đã xử lý
-				setPredictIndex(currentIndex);
-				fetchHistory();
-			})
-			.catch((error) => {
-				console.error("Error predicting image:", error);
-			});
-
-		console.log(predictedImageUrl);
+	const handleImageClick = (url, sliceNumber) => {
+		setPredictedImageUrl(url);
+		setCurrentIndex(sliceNumber);
+		setPredictIndex(sliceNumber);
 	};
 
 	return (
 		<>
-			<h1>Blog Articles</h1>
 			<div className="app-container">
 				{/* Main Content */}
 				<div className="main-content">
@@ -187,7 +175,7 @@ const Blogs = () => {
 								>
 									Next
 								</button>
-								<button
+								{/* <button
 									onClick={handlePredict}
 									style={{
 										marginLeft: "10px",
@@ -197,7 +185,59 @@ const Blogs = () => {
 									}}
 								>
 									Predict
-								</button>
+								</button> */}
+							</div>
+							<div>
+								<h2>Predicted Images</h2>
+								<div
+									style={{
+										display: "flex",
+										flexWrap: "wrap",
+										gap: "10px",
+										justifyContent: "center",
+									}}
+								>
+									{predictedImageUrls.length > 0 ? (
+										predictedImageUrls.map((url, index) => {
+											// Trích xuất số thứ tự mặt cắt từ URL
+											const sliceNumberMatch =
+												url.match(/_slice_(\d+)\.png$/);
+											const sliceNumber = sliceNumberMatch
+												? parseInt(sliceNumberMatch[1], 10)
+												: "Unknown";
+
+											return (
+												<div
+													key={index}
+													style={{
+														textAlign: "center",
+													}}
+												>
+													<img
+														src={url}
+														alt={`Slice ${sliceNumber}`}
+														style={{
+															maxWidth: "300px",
+															maxHeight: "300px",
+															cursor: "pointer",
+														}}
+														onClick={() =>
+															handleImageClick(
+																url, sliceNumber
+															)
+														}
+													/>
+													<p>
+														Image {index + 1} -
+														Slice {sliceNumber}
+													</p>
+												</div>
+											);
+										})
+									) : (
+										<p>No images to display</p>
+									)}
+								</div>
 							</div>
 						</>
 					) : (
