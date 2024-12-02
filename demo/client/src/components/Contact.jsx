@@ -63,7 +63,7 @@ const Contact = () => {
 
 	const handleImageClick = (url, sliceNumber) => {
 		setPredictedImageUrl(url);
-		if (fileType === "mhd/raw"){
+		if (fileType === "mhd/raw" || fileType === "dcm"){
 			setCurrentIndex(sliceNumber);
 			setPredictIndex(sliceNumber);
 		}
@@ -126,7 +126,7 @@ const Contact = () => {
 											fontSize: "18px",
 										}}
 									>
-										{fileType === "mhd/raw"
+										{fileType === "mhd/raw" || fileType === "dcm"
 											? `Slice ${currentIndex} of ${result.length}`
 											: fileType === "png/jpg/jpeg"
 											? "Original image"
@@ -149,7 +149,7 @@ const Contact = () => {
 												fontSize: "18px",
 											}}
 										>
-											{fileType === "mhd/raw" ? (
+											{fileType === "mhd/raw" || fileType === "dcm" ? (
 												<>
 													Predicted Image:{" "}
 													{`Slice ${predictIndex}`}
@@ -163,7 +163,7 @@ const Contact = () => {
 							</div>
 
 							{/* Các nút điều khiển Previous và Next */}
-							{fileType === "mhd/raw" && (
+							{(fileType === "mhd/raw" || fileType === "dcm") && (
 								<div style={{ marginTop: "20px" }}>
 									<button
 										onClick={() =>

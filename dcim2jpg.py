@@ -80,4 +80,4 @@ def cropImages():
 if __name__ == "__main__":
     convertFolder()
     
-    cropImages()
+    # cropImages()
