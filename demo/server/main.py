@@ -15,6 +15,10 @@ from sqlalchemy.orm import Session
 from ultralytics import YOLO
 import pydicom
 from io import BytesIO
+import torch
+import torchvision
+from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
+from tqdm import tqdm
 
 app = FastAPI()
 
@@ -41,6 +45,15 @@ os.makedirs(DCM_PREDICT_SLICE_PNG_DIR, exist_ok=True)
 
 YOLO_model = YOLO(r"D:\Code\Python Code\CT552\YOLO results\runs_yolov8x_512_new\train\weights\best.pt")
 
+FRCNN_model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
+in_features = FRCNN_model.roi_heads.box_predictor.cls_score.in_features
+FRCNN_model.roi_heads.box_predictor = FastRCNNPredictor(in_features, 2) 
+checkpoint = torch.load(r"D:\Code\Python Code\CT552\FRCNN result\frcnn_model_15_epoch.pth", map_location=torch.device('cpu'))
+FRCNN_model.load_state_dict(checkpoint['model_state_dict'])
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+FRCNN_model.to(device)
+FRCNN_model.eval()
+
 # CORS handle
 origins = ["http://localhost:5173"]
 app.add_middleware(
@@ -50,6 +63,18 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"]
 )
+
+def apply_nms(orig_prediction, iou_thresh=0.3):
+    
+    # torchvision returns the indices of the bboxes to keep
+    keep = torchvision.ops.nms(orig_prediction['boxes'], orig_prediction['scores'], iou_thresh)
+    
+    final_prediction = orig_prediction
+    final_prediction['boxes'] = final_prediction['boxes'][keep]
+    final_prediction['scores'] = final_prediction['scores'][keep]
+    final_prediction['labels'] = final_prediction['labels'][keep]
+    
+    return final_prediction
 
 def get_db():
     db = SessionLocal()
@@ -85,7 +110,7 @@ def process_mhd_raw_files(mhd_file: Path, raw_file: Path, id) -> List[str]:
     # Lưu từng lát cắt của ảnh dưới dạng file .png
     png_files = []  # Danh sách để lưu đường dẫn các file .png đã lưu
     pred_img_files = []
-    for i, slice_array in enumerate(image_array):
+    for i, slice_array in tqdm(enumerate(image_array)):
         img = normalize(slice_array, "mhd/raw")  # Chuẩn hóa lát cắt ảnh
         img_grey = img * 255  # Chuyển đổi ảnh chuẩn hóa sang ảnh xám (giá trị từ 0-255)
         img_rgb = np.stack((img_grey,) * 3, -1)  # Tạo ảnh RGB từ ảnh xám
@@ -93,52 +118,103 @@ def process_mhd_raw_files(mhd_file: Path, raw_file: Path, id) -> List[str]:
         cv2.imwrite(png_path, img_rgb)  # Lưu ảnh dưới dạng file .png
         png_files.append(str(png_path))  # Thêm đường dẫn file .png vào danh sách
         
-        box = YOLO_model(img_rgb)
+        img_tensor = torch.from_numpy(img_rgb.transpose(2, 0, 1))
+        img_tensor = img_tensor.float().div(255)
+        with torch.no_grad():
+            prediction = FRCNN_model([img_tensor])[0]
+        prediction = apply_nms(prediction)
+        score_threshold = 0.25
+        filtered_indices = prediction["scores"] > score_threshold
+        filtered_boxes = prediction["boxes"][filtered_indices]
+        filtered_labels = prediction["labels"][filtered_indices]
+        filtered_scores = prediction["scores"][filtered_indices]
         
-        if len(box[0].boxes.xyxy) != 0:
-            for box in box[0].boxes.xyxy:
-                x_min_yolo, y_min_yolo, x_max_yolo, y_max_yolo = box.tolist()
-                cv2.rectangle(img_rgb, (int(x_min_yolo), int(y_min_yolo)), (int(x_max_yolo), int(y_max_yolo)), color=(0,0,255), thickness=2)
+        filtered_data = {
+            "boxes": filtered_boxes,
+            "labels": filtered_labels,
+            "scores": filtered_scores
+        }
+        result = filtered_data["boxes"]
+        if len(result) != 0:
+            for box in result:
+                x_min_frcnn, y_min_frcnn, x_max_frcnn, y_max_frcnn = box.tolist()
+                cv2.rectangle(img_rgb, (int(x_min_frcnn), int(y_min_frcnn)), (int(x_max_frcnn), int(y_max_frcnn)), color=(0,0,255), thickness=2)
             pred_img_path = MHD_RAW_PREDICT_SLICE_PNG_DIR / f"{id[:-4]}_slice_{i}.png"
             cv2.imwrite(pred_img_path, img_rgb)
             pred_img_files.append(str(pred_img_path))
         else:
             continue
+        
+        # box = YOLO_model(img_rgb)
+        
+        # if len(box[0].boxes.xyxy) != 0:
+        #     for box in box[0].boxes.xyxy:
+        #         x_min_yolo, y_min_yolo, x_max_yolo, y_max_yolo = box.tolist()
+        #         cv2.rectangle(img_rgb, (int(x_min_yolo), int(y_min_yolo)), (int(x_max_yolo), int(y_max_yolo)), color=(0,0,255), thickness=2)
+        #     pred_img_path = MHD_RAW_PREDICT_SLICE_PNG_DIR / f"{id[:-4]}_slice_{i}.png"
+        #     cv2.imwrite(pred_img_path, img_rgb)
+        #     pred_img_files.append(str(pred_img_path))
+        # else:
+        #     continue
 
     return png_files, pred_img_files  # Trả về danh sách đường dẫn các file .png đã lưu
 
-def process_dcm_files(dcm_files) -> List[str]:
+def process_dcm_files(dcm_files, folder_name) -> List[str]:
     # Lưu từng lát cắt của ảnh dưới dạng file .png
     png_files = []  # Danh sách để lưu đường dẫn các file .png đã lưu
     pred_img_files = []
     
     for i, dcm_file in enumerate(dcm_files):
-        # with dcm_file.file as file_obj:
-        #     contents = file_obj.read()
-        #     dcm = pydicom.dcmread(BytesIO(contents), force=True)
         dcm = pydicom.dcmread(dcm_file)
         series_uid = dcm.SeriesInstanceUID
         slice_array = dcm.pixel_array
         img = normalize(slice_array, "dcm")  # Chuẩn hóa lát cắt ảnh
         img_grey = img * 255  # Chuyển đổi ảnh chuẩn hóa sang ảnh xám (giá trị từ 0-255)
         img_rgb = np.stack((img_grey,) * 3, -1)  # Tạo ảnh RGB từ ảnh xám
-        png_path = DCM_OUTPUT_DIR / f"{series_uid}_slice_{i}.png"  # Đường dẫn lưu file .png
+        png_path = DCM_OUTPUT_DIR / f"{folder_name}_slice_{i}.png"  # Đường dẫn lưu file .png
         cv2.imwrite(png_path, img_rgb)  # Lưu ảnh dưới dạng file .png
         png_files.append(str(png_path))  # Thêm đường dẫn file .png vào danh sách
         
-        box = YOLO_model(img_rgb)
+        img_tensor = torch.from_numpy(img_rgb.transpose(2, 0, 1))
+        img_tensor = img_tensor.float().div(255)
+        with torch.no_grad():
+            prediction = FRCNN_model([img_tensor])[0]
+        prediction = apply_nms(prediction)
+        score_threshold = 0.25
+        filtered_indices = prediction["scores"] > score_threshold
+        filtered_boxes = prediction["boxes"][filtered_indices]
+        filtered_labels = prediction["labels"][filtered_indices]
+        filtered_scores = prediction["scores"][filtered_indices]
         
-        if len(box[0].boxes.xyxy) != 0:
-            for box in box[0].boxes.xyxy:
-                x_min_yolo, y_min_yolo, x_max_yolo, y_max_yolo = box.tolist()
-                cv2.rectangle(img_rgb, (int(x_min_yolo), int(y_min_yolo)), (int(x_max_yolo), int(y_max_yolo)), color=(0,0,255), thickness=2)
-            pred_img_path = DCM_PREDICT_SLICE_PNG_DIR / f"{series_uid}_slice_{i}.png"
+        filtered_data = {
+            "boxes": filtered_boxes,
+            "labels": filtered_labels,
+            "scores": filtered_scores
+        }
+        result = filtered_data["boxes"]
+        if len(result) != 0:
+            for box in result:
+                x_min_frcnn, y_min_frcnn, x_max_frcnn, y_max_frcnn = box.tolist()
+                cv2.rectangle(img_rgb, (int(x_min_frcnn), int(y_min_frcnn)), (int(x_max_frcnn), int(y_max_frcnn)), color=(0,0,255), thickness=2)
+            pred_img_path = DCM_PREDICT_SLICE_PNG_DIR / f"{folder_name}_slice_{i}.png"
             cv2.imwrite(pred_img_path, img_rgb)
             pred_img_files.append(str(pred_img_path))
         else:
             continue
+        
+        # box = YOLO_model(img_rgb)
+        
+        # if len(box[0].boxes.xyxy) != 0:
+        #     for box in box[0].boxes.xyxy:
+        #         x_min_yolo, y_min_yolo, x_max_yolo, y_max_yolo = box.tolist()
+        #         cv2.rectangle(img_rgb, (int(x_min_yolo), int(y_min_yolo)), (int(x_max_yolo), int(y_max_yolo)), color=(0,0,255), thickness=2)
+        #     pred_img_path = DCM_PREDICT_SLICE_PNG_DIR / f"{series_uid}_slice_{i}.png"
+        #     cv2.imwrite(pred_img_path, img_rgb)
+        #     pred_img_files.append(str(pred_img_path))
+        # else:
+        #     continue
 
-    return png_files, pred_img_files, series_uid  # Trả về danh sách đường dẫn các file .png đã lưu
+    return png_files, pred_img_files  # Trả về danh sách đường dẫn các file .png đã lưu
 
 def save_extraction_history(file_name, file_type, original_images, predicted_images):
     session = SessionLocal()
@@ -234,14 +310,15 @@ async def get_predict_image(image_name: str):
 
 @app.post("/upload_dcm/")
 async def upload_folder(files: List[UploadFile] = File(...)):
+    folder_name = files[0].filename.split('/')[0]
     upload_file_paths = []
     for file in files:
-        file_path = Path(DCM_UPLOAD_DIR) / f"{file.filename.split('/')[0]}_{file.filename.split('/')[1]}"
+        file_path = Path(DCM_UPLOAD_DIR) / f"{folder_name}_{file.filename.split('/')[1]}"
         with open(file_path, "wb") as buffer:
             buffer.write(await file.read())
         upload_file_paths.append(file_path)
     
-    result_files, pred_files, uid = process_dcm_files(upload_file_paths)
+    result_files, pred_files= process_dcm_files(upload_file_paths, folder_name)
     image_urls = [f"http://localhost:8000/output_dcm/{Path(file).name}" for file in result_files]
     pred_image_urls = [f"http://localhost:8000/predict_image_dcm/{Path(file).name}" for file in pred_files]
     
