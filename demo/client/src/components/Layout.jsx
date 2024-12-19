@@ -6,19 +6,16 @@ const Layout = () => {
 			<nav>
 				<ul>
 					<li>
-						<Link to="/">Home</Link>
+						<Link to="/">Lịch sử</Link>
 					</li>
 					<li>
-						<Link to="/blogs">Blogs</Link>
+						<Link to="/upload_mhdraw">Tải lên file MHD/RAW</Link>
 					</li>
 					<li>
-						<Link to="/blogs2">Blogs 2</Link>
+						<Link to="/upload_image">Tải lên file PNG</Link>
 					</li>
 					<li>
-						<Link to="/blogs3">Blogs 3</Link>
-					</li>
-					<li>
-						<Link to="/contact">Contact</Link>
+						<Link to="/upload_dcm">Tải lên file DICOM</Link>
 					</li>
 				</ul>
 			</nav>

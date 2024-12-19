@@ -1,14 +1,11 @@
-import { useState, useEffect } from "react";
 import "./App.css";
-import axios from "axios";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout";
-import Home from "./components/Home";
-import Blogs from "./components/Blog";
-import Contact from "./components/Contact";
+import UploadMHDRAW from "./components/UploadMHDRAW";
+import History from "./components/History";
 import NoPage from "./components/NoPage";
-import Blogs2 from "./components/Blog2";
-import Blogs3 from "./components/Blog3";
+import UploadImage from "./components/UploadImage";
+import UploadDCM from "./components/UploadDCM";
 
 function App() {
 	return (
@@ -16,11 +13,10 @@ function App() {
 			<BrowserRouter>
 				<Routes>
 					<Route path="/" element={<Layout />}>
-						<Route index element={<Home />} />
-						<Route path="blogs" element={<Blogs />} />
-						<Route path="blogs2" element={<Blogs2 />} />
-						<Route path="blogs3" element={<Blogs3 />} />
-						<Route path="contact" element={<Contact />} />
+						<Route index element={<History />} />
+						<Route path="upload_mhdraw" element={<UploadMHDRAW />} />
+						<Route path="upload_image" element={<UploadImage />} />
+						<Route path="upload_dcm" element={<UploadDCM />} />
 						<Route path="*" element={<NoPage />} />
 					</Route>
 				</Routes>

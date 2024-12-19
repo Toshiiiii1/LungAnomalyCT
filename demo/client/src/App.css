@@ -72,13 +72,13 @@
 
 .app-container {
   display: flex;
-  height: 100vh;
+  /* height: 100vh; */
 }
 
 .sidebar {
-  width: 400px;
   padding: 20px;
   overflow-y: auto;
+  max-height: 1000px;
 }
 
 .main-content {

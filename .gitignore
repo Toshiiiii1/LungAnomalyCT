@@ -177,14 +177,10 @@ pyrightconfig.json
 # End of https://www.toptal.com/developers/gitignore/api/python
 
 # Other
-LUNA16/
 *.zip
 *.pth
 *.pt
-COCO format/
-YOLO format/
-FRCNN format/
 DETR results/
-FRCNN results/
+FRCNN result/
 YOLO results/
 *.db
