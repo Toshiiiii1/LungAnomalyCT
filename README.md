@@ -81,11 +81,11 @@ npm run dev
 - Trích xuất tọa độ tâm x, y, z của nốt phổi từ tệp annotations.csv, biến đổi tọa độ tâm từ hệ tọa độ thế giới (mm) sang hệ tọa độ điểm ảnh (pixel).
 
 $$
-\begin{align*}
+\begin{align}
 x_{\text{pixel}} = \frac{\text{coord}_X - \text{offset}_x}{\text{spacing}_x} \\
 y_{\text{pixel}} = \frac{\text{coord}_Y - \text{offset}_y}{\text{spacing}_y} \\
 z_{\text{pixel}} = \frac{\text{coord}_Z - \text{offset}_z}{\text{spacing}_z}
-\end{align*}
+\end{align}
 $$
 
 
