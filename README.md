@@ -82,9 +82,7 @@ npm run dev
 
 $$
 \begin{align}
-x_{\text{pixel}} = \frac{\text{coord}_X - \text{offset}_x}{\text{spacing}_x} \\
-x_{\text{pixel}} = \frac{\text{coord}_X - \text{offset}_x}{\text{spacing}_x} \\
-x_{\text{pixel}} = \frac{\text{coord}_X - \text{offset}_x}{\text{spacing}_x} \\
+x_{\text{pixel}} = \frac{\text{coord_X} - \text{offset_x}}{\text{spacing_x}} \\
 \end{align}
 $$
 
