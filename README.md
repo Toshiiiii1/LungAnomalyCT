@@ -82,10 +82,9 @@ npm run dev
 
 $$
 \begin{align}
-x_{\min} &= x_{\text{pixel}} - \frac{\text{diameter}}{2} - 2 \\
-x_{\max} &= x_{\text{pixel}} + \frac{\text{diameter}}{2} + 2 \\
-y_{\min} &= y_{\text{pixel}} - \frac{\text{diameter}}{2} - 2 \\
-y_{\max} &= y_{\text{pixel}} + \frac{\text{diameter}}{2} + 2
+x_{\text{pixel}} = \frac{\text{coord}_X - \text{offset}_x}{\text{spacing}_x} \\
+x_{\text{pixel}} = \frac{\text{coord}_X - \text{offset}_x}{\text{spacing}_x} \\
+x_{\text{pixel}} = \frac{\text{coord}_X - \text{offset}_x}{\text{spacing}_x} \\
 \end{align}
 $$
 
