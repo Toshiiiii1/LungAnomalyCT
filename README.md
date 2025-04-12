@@ -80,6 +80,7 @@ npm run dev
 - Trích xuất các mặt cắt của ảnh CT từ tệp .raw với thư viện SimpleITK.
 - Trích xuất tọa độ tâm x, y, z của nốt phổi từ tệp annotations.csv, biến đổi tọa độ tâm từ hệ tọa độ thế giới (mm) sang hệ tọa độ điểm ảnh (pixel).
 
+
 $$
 \begin{align}
 x_{\text{pixel}} &= \frac{\text{coord}_X - \text{offset}_x}{\text{spacing}_x} \\
