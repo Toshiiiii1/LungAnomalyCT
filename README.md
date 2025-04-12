@@ -95,6 +95,15 @@ $z_{\text{pixel}} = \frac{\text{coord}_Z - \text{offset}_z}{\text{spacing}_z}$
 
 - Xác định đường kính của nốt phổi ở hệ tọa độ điểm ảnh (pixel)
 
+$$
+\begin{align}
+x_{\min} &= x_{\text{pixel}} - \frac{\text{diameter}}{2} - 2 \\
+x_{\max} &= x_{\text{pixel}} + \frac{\text{diameter}}{2} + 2 \\
+y_{\min} &= y_{\text{pixel}} - \frac{\text{diameter}}{2} - 2 \\
+y_{\max} &= y_{\text{pixel}} + \frac{\text{diameter}}{2} + 2
+\end{align}
+$$
+
 $x_{\text{min}} = x_{\text{pixel}} - \frac{\text{diameter}}{2} - 2$
 $x_{\text{max}} = x_{\text{pixel}} + \frac{\text{diameter}}{2} + 2$
 $y_{\text{min}} = y_{\text{pixel}} - \frac{\text{diameter}}{2} - 2$
