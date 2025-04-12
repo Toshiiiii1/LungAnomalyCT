@@ -80,11 +80,7 @@ npm run dev
 - Trích xuất các mặt cắt của ảnh CT từ tệp .raw với thư viện SimpleITK.
 - Trích xuất tọa độ tâm x, y, z của nốt phổi từ tệp annotations.csv, biến đổi tọa độ tâm từ hệ tọa độ thế giới (mm) sang hệ tọa độ điểm ảnh (pixel).
 
-$$
-\begin{align}
-x_{\text{pixel}} = \frac{\text{coord_X} - \text{offset_x}}{\text{spacing_x}} \\
-\end{align}
-$$
+![alt text](./images/temp.png)
 
 - $z_{\text{pixel}}$ chính là vị trí mặt cắt mà nốt phổi được đánh dấu
 - Trích xuất mặt cắt thứ $z_{\text{pixel}}$ từ tập hợp các mặt cắt, chuyển ảnh về ảnh xám bằng cách chuẩn hóa các giá trị Hounsfield về khoảng giá trị từ 0 đến 1 bằng phương pháp chuẩn hóa Min-Max với giá trị Min là -1.000 và giá trị Max là 400.
