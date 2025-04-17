@@ -1,6 +1,6 @@
 # Phát hiện nốt phổi trên ảnh CT phổi
 
-Tool tự động phát hiện những vị trí được cho là nốt phổi từ các lát cắt của ảnh CT phổi.
+Tool tự động phát hiện những vị trí được cho là nốt phổi từ các lát cắt của ảnh CT phổi. Chi tiết đọc tại [đây](./docs/README.md)
 
 ## Tính năng chính
 - Phát hiện và khoang vùng những vị trí được cho là nốt phổi.
