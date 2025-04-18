@@ -12,7 +12,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from models import SessionLocal, RecognitionHistory
 import json
 from sqlalchemy.orm import Session
-from ultralytics import YOLO
 import pydicom
 from io import BytesIO
 import torch

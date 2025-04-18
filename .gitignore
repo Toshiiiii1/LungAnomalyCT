@@ -185,3 +185,4 @@ FRCNN result/
 YOLO results/
 *.db
 weights/
+demo/server/*/
