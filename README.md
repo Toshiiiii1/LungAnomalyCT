@@ -19,6 +19,13 @@ This is a tool automatically detects locations that are believed to be lung nodu
 # Clone the repo
 git clone https://github.com/Toshiiiii1/Abnormal_religions_detection_on_lung_CT_image.git
 
+# Start virtual eviroment
+python -m venv venv
+source venv/Scripts/activate
+
+# Check venv activate
+which python
+
 # Install the required Python libraries
 pip install -r requirements.txt
 ```
@@ -61,3 +68,4 @@ npm run dev
 - [HuggingFace](https://huggingface.co/docs/transformers/model_doc/detr), [Pytorch](https://pytorch.org/vision/main/models/faster_rcnn.html) and [Ultralytics](https://docs.ultralytics.com/vi/models/yolov8/) for the amazing detection models.
 - [FastAPI](https://fastapi.tiangolo.com/) for the excellent framework to build APIs.
 - [ReactJS](https://react.dev/) for the amazing framework.
+- [SimpleITK](https://simpleitk.org/), [Pydicom](https://pydicom.github.io/) for the amazing library to process medical images.
