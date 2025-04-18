@@ -1,56 +1,63 @@
-# Phát hiện nốt phổi trên ảnh CT phổi
+# Abnormal detection on lung CT scans
 
-Tool tự động phát hiện những vị trí được cho là nốt phổi từ các lát cắt của ảnh CT phổi. Chi tiết đọc tại [đây](./docs/README.md)
+This is a tool automatically detects locations that are believed to be lung nodule from lung CT scan slices. Click  [here](./docs/README.md) to see more details.
 
-## Tính năng chính
-- Phát hiện và khoang vùng những vị trí được cho là nốt phổi.
-- API có thể tích hợp vào các ứng dụng khác.
-- Hỗ trợ định dạng file .dcm được dùng trong các bệnh viện.
+## Features
+- Automatically detect and localize locations contain lung nodules.
+- Has API can be intergrated into other application.
+- Support `.dcm` file format is used in hospitals or normal image (png/jpg).
 
 ## Quickstart
 
-### Chạy demo với giao diện web
+### Run demo with web interface
 
-**Khuyến khích sử dụng GPU để tăng tốc độ phát hiện (hơn 10 phút đối với CPU)**
+**GPU is recommended to speed up detection**
 
-1. Cài đặt
+1. Installation
 
 ```bash
-# Clone repo
+# Clone the repo
 git clone https://github.com/Toshiiiii1/Abnormal_religions_detection_on_lung_CT_image.git
 
-# Tải các thư viện Python cần thiết
+# Install the required Python libraries
 pip install -r requirements.txt
 ```
 
-2. Chạy backend (FastAPI)
+2. Start backend (FastAPI)
 ```bash
-# Di chuyển đến thư mục demo
+# Move to demo folder
 cd demo/
 
-# Khởi tạo database (lưu lịch sử phát hiện)
+# Initialize database (store detection history)
 python models.py
 
-# Di chuyển đến thư mục server và chạy backend
+# Move to server folder and start backend
 cd server/
 uvicorn main:app --port 8000
 ```
 
-3. Chạy frontend (ReactJS)
+3. Start frontend (ReactJS)
 ```bash
-# Di chuyển đến thư mục frontend
+# Move to frontend folder
 cd demo/frontend/
 
-# Tải các thư viện cần thiết
+# Install required libraries
 npm install
 
-# Chạy frontend
+# Start frontend
 npm run dev
 ```
 
 ### [Video demo](https://drive.google.com/file/d/1vbjmvar-hP2iIdj4G4l4DCJAoNS9rWrj/view?usp=drive_link)
 
-## Công nghệ sử dụng
-- Mô hình phát hiện đối tượng: YOLOv8, DETR ResNet50 và Faster R-CNN ResNet50.
+## Technical details
+- Detection models: YOLOv8, DETR ResNet50 and Faster R-CNN ResNet50.
 - Backend: FastAPI.
 - UI: ReactJS.
+- Other: HuggingFace, Pytorch, Numpy, Ultralytics.
+
+## Acknowledgments
+- [LUNA16](https://luna16.grand-challenge.org/) for provide the public lung CT dataset.
+- [HuggingFace](https://huggingface.co/docs/transformers/model_doc/detr), [Pytorch](https://pytorch.org/vision/main/models/faster_rcnn.html) and [Ultralytics](https://docs.ultralytics.com/vi/models/yolov8/) for the amazing detection models.
+- [FastAPI](https://fastapi.tiangolo.com/) for the excellent framework to build APIs.
+- [ReactJS](https://react.dev/) for the amazing framework.
