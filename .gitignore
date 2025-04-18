@@ -131,7 +131,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-CT552_vm/
+CT552_vm_new_2/
 
 # Spyder project settings
 .spyderproject
@@ -184,3 +184,4 @@ DETR results/
 FRCNN result/
 YOLO results/
 *.db
+weights/
