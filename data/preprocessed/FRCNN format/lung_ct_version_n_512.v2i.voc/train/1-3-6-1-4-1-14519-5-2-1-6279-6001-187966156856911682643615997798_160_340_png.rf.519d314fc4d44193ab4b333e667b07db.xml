@@ -1,0 +1,27 @@
+<annotation>
+	<folder></folder>
+	<filename>1-3-6-1-4-1-14519-5-2-1-6279-6001-187966156856911682643615997798_160_340_png.rf.519d314fc4d44193ab4b333e667b07db.jpg</filename>
+	<path>1-3-6-1-4-1-14519-5-2-1-6279-6001-187966156856911682643615997798_160_340_png.rf.519d314fc4d44193ab4b333e667b07db.jpg</path>
+	<source>
+		<database>roboflow.com</database>
+	</source>
+	<size>
+		<width>512</width>
+		<height>512</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>nodule</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<occluded>0</occluded>
+		<bndbox>
+			<xmin>430</xmin>
+			<xmax>442</xmax>
+			<ymin>196</ymin>
+			<ymax>208</ymax>
+		</bndbox>
+	</object>
+</annotation>
