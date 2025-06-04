@@ -311,7 +311,7 @@ def main():
     annotations_url = "https://zenodo.org/records/3723295/files/annotations.csv"
     
     # Download phase
-    if not opt.download_only:
+    if not opt.process_only:
         print("=== DOWNLOAD PHASE ===")
         
         # Download subset
@@ -325,7 +325,7 @@ def main():
         print("Download phase completed!")
     
     # Processing phase
-    if not opt.process_only:
+    if not opt.download_only:
         print("\n=== PROCESSING PHASE ===")
         
         # Process CT data
