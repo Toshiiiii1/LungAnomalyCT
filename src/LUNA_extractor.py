@@ -162,9 +162,9 @@ def process_ct_data(subset_name, data_dir, output_dir, clean_output=False, separ
         print(f"Annotations file not found: {annotations_path}")
         return
         
-    df_node = pd.read_csv(annotations_path)
-    df_node["file"] = df_node["seriesuid"].apply(lambda x: get_filename(x, file_list))
-    df_node = df_node.dropna()
+    nodule_annotations = pd.read_csv(annotations_path)
+    nodule_annotations["file"] = nodule_annotations["seriesuid"].apply(lambda x: get_filename(x, file_list))
+    nodule_annotations = nodule_annotations.dropna()
     
     # Initialize output CSV
     columns = ['x_min', 'x_max', 'y_min', 'y_max', 'ID']
@@ -197,12 +197,12 @@ def process_ct_data(subset_name, data_dir, output_dir, clean_output=False, separ
                 writer = csv.DictWriter(file, fieldnames=columns)
                 writer.writeheader()
     
-    df_roi_cur = {}
+    nodule_voxel_coor = {}
     
     print(f"Extracting images and coordinates from {subset_name}")
     
     for fcount, img_file in enumerate(tqdm(file_list, desc="Processing CT files")):
-        mini_df = df_node[df_node["file"] == img_file]
+        mini_df = nodule_annotations[nodule_annotations["file"] == img_file]
         
         if len(mini_df) > 0:
             try:
@@ -225,13 +225,13 @@ def process_ct_data(subset_name, data_dir, output_dir, clean_output=False, separ
                     # Only process the slice containing the nodule center
                     i_z = int(v_center[2])
                     if 0 <= i_z < num_z:
-                        _, roi = make_mask(center, diam, i_z*spacing[2]+origin[2], 
+                        _, voxel_coor = make_mask(center, diam, i_z*spacing[2]+origin[2], 
                                          width, height, spacing, origin)
                         
                         # Generate unique ID and filename (include subset name to avoid conflicts)
                         base_name = os.path.basename(img_file).rsplit('.', 1)[0]
-                        roi_key = f"{subset_name}_{base_name}_{i_z}_{node_idx}"
-                        img_name = f"{roi_key}.png"
+                        slice = f"{subset_name}_{base_name}_{i_z}_{node_idx}"
+                        img_name = f"{slice}.png"
                         
                         # Normalize and save image
                         img = normalize(img_array[i_z])
@@ -242,26 +242,35 @@ def process_ct_data(subset_name, data_dir, output_dir, clean_output=False, separ
                         cv2.imwrite(img_path, img_rgb)
                         
                         # Store ROI coordinates
-                        df_roi_cur[roi_key] = roi
+                        nodule_voxel_coor[slice] = voxel_coor
                         
             except Exception as e:
                 print(f"Error processing {img_file}: {str(e)}")
                 continue
     
     # Save ROI coordinates to CSV
-    if df_roi_cur:
-        df_temp = pd.DataFrame.from_dict(df_roi_cur, 
+    if nodule_voxel_coor:
+        df_voxel_coor = pd.DataFrame.from_dict(nodule_voxel_coor, 
                                        columns=["x_min", "x_max", "y_min", "y_max"], 
                                        orient='index')
-        df_temp["ID"] = list(df_roi_cur.keys())
-        df_temp = df_temp.reset_index(drop=True)
+        df_voxel_coor["ID"] = list(nodule_voxel_coor.keys())
+        df_voxel_coor = df_voxel_coor.reset_index(drop=True)
+        df_voxel_coor = df_voxel_coor[(df_voxel_coor['x_min'] >= 0) & (df_voxel_coor['x_max'] >= 0) & (df_voxel_coor['y_min'] >= 0) & (df_voxel_coor['y_max'] >= 0)]
+        
+        ids = df_voxel_coor["ID"].to_numpy()
+        file_list = os.listdir(ct_images_dir)
+        for file in tqdm(file_list):
+            file_name = file.rsplit(".", 1)[0]
+            if file_name not in ids:
+                os.remove(os.path.join(ct_images_dir, file))
+                print(f"Delete {file_name}")
         
         # Append to existing CSV
         df_roi = pd.read_csv(output_csv_path)
-        df_roi = pd.concat([df_roi, df_temp], ignore_index=True)
+        df_roi = pd.concat([df_roi, df_voxel_coor], ignore_index=True)
         df_roi.to_csv(output_csv_path, index=False)
         
-        print(f"Processed {len(df_roi_cur)} nodules from {subset_name}")
+        # print(f"Processed {len(nodule_voxel_coor)} nodules from {subset_name}")
         print(f"Results saved to {current_output_dir}")
     else:
         print("No nodules were processed")
