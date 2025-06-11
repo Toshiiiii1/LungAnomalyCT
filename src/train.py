@@ -1,20 +1,30 @@
 import os
 import torch
-import torchvision
-import cv2
-import numpy as np
-import albumentations as A
 import utils
+import argparse
 
 from engine import train_one_epoch, evaluate
 from data import LungImagesDataset
 from model import CustomFasterRCNN
+
+def parse_opt():
+    parser = argparse.ArgumentParser()
+    
+    parser.add_argument("--weight", type=str, default="", help="Pre-trained model weight")
+    parser.add_argument("--train-set", type=str, default="", help="Train data in VOC format")
+    parser.add_argument("--val-set", type=str, default="", help="Validation data in VOC format")
+    
+    opt = parser.parse_args()
+    
+    return opt
         
-def main(train_dir, val_dir):
+def main():
+    opt = parse_opt()
+    
     print("Preparing data...")
     # use our dataset and defined transformations
-    train_dataset = LungImagesDataset(train_dir, 512, 512, is_train=True)
-    val_dataset = LungImagesDataset(val_dir, 512, 512, is_train=False)
+    train_dataset = LungImagesDataset(opt.train_set, 512, 512, is_train=True)
+    val_dataset = LungImagesDataset(opt.val_set, 512, 512, is_train=False)
 
     # define training and validation data loaders
     train_data_loader = torch.utils.data.DataLoader(
@@ -33,7 +43,10 @@ def main(train_dir, val_dir):
 
     print("Loading model...")
     # get the model using our helper function
-    model = CustomFasterRCNN(num_classes=num_classes).get_model()
+    if opt.weight:
+        model = CustomFasterRCNN(num_classes=num_classes, checkpoint_path=opt.weight).get_model()
+    else:
+        model = CustomFasterRCNN(num_classes=num_classes).get_model()
 
     # construct an optimizer
     params = [p for p in model.parameters() if p.requires_grad]
@@ -60,7 +73,5 @@ def main(train_dir, val_dir):
 
 if __name__ == "__main__":
     # TODO: adjust RPN anchor size
-    train_dir = '/kaggle/input/lung-ct-version-n-512/lung_ct_version_n_512.v2i.voc/train'
-    val_dir = '/kaggle/input/lung-ct-version-n-512/lung_ct_version_n_512.v2i.voc/valid'
     
-    main(train_dir, val_dir)
+    main()
