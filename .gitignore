@@ -186,3 +186,4 @@ YOLO results/
 *.db
 weights/
 demo/server/*/
+notebooks/
