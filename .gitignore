@@ -174,8 +174,6 @@ poetry.toml
 # LSP config files
 pyrightconfig.json
 
-# End of https://www.toptal.com/developers/gitignore/api/python
-
 # Other
 *.zip
 *.pth
@@ -187,3 +185,6 @@ YOLO results/
 weights/
 demo/server/*/
 notebooks/
+*.ipynb
+
+# End of https://www.toptal.com/developers/gitignore/api/python
