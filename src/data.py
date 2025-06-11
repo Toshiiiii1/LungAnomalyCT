@@ -23,8 +23,9 @@ class LungImagesDataset(Dataset):
         
         # classes: 0 index is reserved for background
         self.classes = ["background", 'nodule']
+        self.transforms = self.get_transform()
         
-    def transform(self):
+    def get_transform(self):
         if self.is_train:
             return A.Compose([
                                 A.HorizontalFlip(0.5),
@@ -98,24 +99,10 @@ class LungImagesDataset(Dataset):
         target["labels"] = labels
         target["area"] = area
         target["iscrowd"] = iscrowd
-        # image_id
-        # image_id = torch.tensor([idx])
         target["image_id"] = idx
         
         sample = self.transforms(image = img_res)
         img_res = sample['image']
-
-
-        # if self.transforms:
-            
-        #     # sample = self.transforms(image = img_res,
-        #     #                          bboxes = target['boxes'],
-        #     #                          labels = labels)
-
-        #     sample = self.transforms(image = img_res)
-            
-        #     img_res = sample['image']
-        #     # target['boxes'] = torch.Tensor(sample['bboxes'])
         
         return img_res, target
 
