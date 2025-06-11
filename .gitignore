@@ -186,5 +186,6 @@ weights/
 demo/server/*/
 notebooks/
 *.ipynb
+data/predicted
 
 # End of https://www.toptal.com/developers/gitignore/api/python
